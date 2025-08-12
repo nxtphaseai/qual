@@ -14,7 +14,22 @@ import ReactMarkdown from "react-markdown"
 import ResearchReport from "./research-report"
 import EntityText from "./entity-text"
 import CitationMarkdown from "./citation-markdown"
+import GPT5PerformanceWarning from "./gpt5-performance-warning"
+import FileDrop from "./file-drop"
+import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+type RecordItem = {
+  id: string
+  text: string
+  meta?: Record<string, any>
+  businessData?: {
+    type: 'financial' | 'sales' | 'operational' | 'general'
+    metrics?: string[]
+    timeRange?: string
+    summary?: string
+  }
+}
 
 type PlanStep = {
   title: string
@@ -54,48 +69,44 @@ type Effort = "low" | "medium" | "high"
 
 const exampleTopics = [
   {
-    value: "vacuum-bags",
-    label: "Vacuum bags industry basics and landscape",
-    topic: "Vacuum bags industry basics and landscape",
+    value: "peptide-therapeutics",
+    label: "Peptide therapeutics market and commercial landscape",
+    topic: "Peptide therapeutics market and commercial landscape",
     context:
-      "I have a call with a vacuum bag manufacturer. I want to understand market overview, key players, product types, materials, use-cases, supply chain, pricing dynamics, regulations, and current trends.",
-    goals: "Quickly brief me to sound informed, plus 10 sharp questions I can ask on the call.",
+      "Due diligence on a peptide therapeutics company. Need to understand market dynamics, key therapeutic areas (GLP-1, oncology, rare diseases), manufacturing challenges, regulatory pathways, competitive landscape, and recent M&A activity.",
+    goals: "Assess market opportunity, competitive positioning, and key risks. Prepare strategic questions about manufacturing scale, IP protection, and pathway to profitability.",
   },
   {
-    value: "ai-chips",
-    label: "AI chip market and semiconductor trends",
-    topic: "AI chip market and semiconductor trends",
+    value: "strength-training-gym",
+    label: "Strength training market and gym business fundamentals",
+    topic: "Strength training market and gym business fundamentals",
     context:
-      "Preparing for a meeting with an AI hardware startup. Need to understand the competitive landscape, key technologies (GPUs, TPUs, neuromorphic chips), major players like NVIDIA, AMD, Intel, and emerging startups.",
-    goals:
-      "Get up to speed on market dynamics, technical differentiators, and investment trends. Prepare insightful questions about their technology stack and go-to-market strategy.",
+      "Evaluating investment in a strength training gym concept. Need to understand market trends, demographics, equipment requirements, operational models (boutique vs. big box), member acquisition costs, retention strategies, and competitive differentiation.",
+    goals: "Analyze business model viability, market positioning, and operational requirements. Prepare questions about unit economics, scalability, and competitive moats.",
   },
   {
-    value: "sustainable-packaging",
-    label: "Sustainable packaging solutions and regulations",
-    topic: "Sustainable packaging solutions and regulations",
+    value: "data-marketplace",
+    label: "Data marketplace ecosystem and monetization strategies",
+    topic: "Data marketplace ecosystem and monetization strategies",
     context:
-      "Meeting with a CPG company exploring eco-friendly packaging alternatives. Need to understand biodegradable materials, recycling technologies, regulatory requirements, and cost implications.",
-    goals:
-      "Understand the sustainability landscape, key innovations, and regulatory pressures. Prepare questions about implementation challenges and ROI.",
+      "Meeting with a data marketplace startup. Need to understand the data economy, key market players, data types and sources, pricing models, regulatory landscape (GDPR, CCPA), and emerging trends in data commercialization.",
+    goals: "Evaluate market opportunity and competitive dynamics. Prepare questions about data quality, compliance frameworks, and sustainable competitive advantages.",
   },
   {
-    value: "fintech-payments",
-    label: "Digital payments and fintech disruption",
-    topic: "Digital payments and fintech disruption",
+    value: "vertical-farming",
+    label: "Vertical farming technology and market viability",
+    topic: "Vertical farming technology and market viability",
     context:
-      "Due diligence call with a payments startup. Need to understand the competitive landscape, regulatory environment, key technologies (blockchain, APIs, mobile wallets), and market opportunities.",
-    goals:
-      "Get briefed on payment rails, compliance requirements, and competitive positioning. Prepare technical and business model questions.",
+      "Due diligence on a vertical farming technology company. Need to understand the controlled environment agriculture market, key technologies (LED lighting, hydroponics, automation), energy costs, crop economics, and path to profitability versus traditional farming.",
+    goals: "Assess technological differentiation and economic viability. Prepare questions about energy efficiency, scalability challenges, and target market strategy.",
   },
   {
-    value: "remote-work-tools",
-    label: "Remote work software and collaboration tools",
-    topic: "Remote work software and collaboration tools",
+    value: "cybersecurity-mesh",
+    label: "Cybersecurity mesh architecture and zero-trust evolution",
+    topic: "Cybersecurity mesh architecture and zero-trust evolution",
     context:
-      "Evaluating enterprise software vendors for our remote workforce. Need to understand the market landscape, key players, feature comparisons, security considerations, and pricing models.",
-    goals:
-      "Compare solutions objectively and understand implementation challenges. Prepare vendor evaluation criteria and negotiation points.",
+      "Evaluating a cybersecurity mesh solution for enterprise deployment. Need to understand the evolution from perimeter security to zero-trust, mesh architecture benefits, implementation challenges, vendor landscape, and integration with existing security stacks.",
+    goals: "Compare architectural approaches and assess implementation feasibility. Prepare technical questions about identity management, policy orchestration, and performance impacts.",
   },
 ]
 
@@ -111,7 +122,7 @@ export default function ResearchAgent() {
   const [timebox, setTimebox] = useState("20 minutes")
 
   // Model/effort
-  const [model, setModel] = useState<string>("gpt-4o")
+  const [model, setModel] = useState<string>("gpt-5")
   const [effort, setEffort] = useState<Effort>("low")
 
   // Plan state
@@ -133,6 +144,10 @@ export default function ResearchAgent() {
   const [planStepsExpanded, setPlanStepsExpanded] = useState(true)
   const [briefExpanded, setBriefExpanded] = useState(true)
   const [clarifyingAnswers, setClarifyingAnswers] = useState<string>("")
+  
+  // Context files and analysis
+  const [uploadedFiles, setUploadedFiles] = useState<RecordItem[]>([])
+  const [includeContextAnalysis, setIncludeContextAnalysis] = useState(false)
   
   // Thinking activities that rotate
   const thinkingActivities = [
@@ -381,7 +396,18 @@ export default function ResearchAgent() {
       const res = await fetch("/api/research/execute/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, context, goals, timebox, steps: activeSteps, model, reasoningEffort: effort, clarifyingAnswers }),
+        body: JSON.stringify({ 
+          topic, 
+          context, 
+          goals, 
+          timebox, 
+          steps: activeSteps, 
+          model, 
+          reasoningEffort: effort, 
+          clarifyingAnswers,
+          contextFiles: includeContextAnalysis ? uploadedFiles : undefined,
+          includeContextAnalysis
+        }),
         signal: ctrl.signal,
       })
       if (!res.ok) {
@@ -585,6 +611,7 @@ export default function ResearchAgent() {
                   <SelectValue placeholder="Select model" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="gpt-5">GPT-5</SelectItem>
                   <SelectItem value="gpt-4o">GPT-4o</SelectItem>
                   <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
                   <SelectItem value="o1-preview">o1-preview</SelectItem>
@@ -592,6 +619,9 @@ export default function ResearchAgent() {
                 </SelectContent>
               </Select>
             </div>
+            
+            <GPT5PerformanceWarning show={model === "gpt-5"} />
+            
             <div className="grid gap-2">
               <Label>Reasoning effort</Label>
               <Select value={effort} onValueChange={(value) => setEffort(value as Effort)}>
@@ -623,6 +653,77 @@ export default function ResearchAgent() {
                   <SelectItem value="2 hours">2 hours</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          {/* Context Files Section */}
+          <div className="border-t pt-6">
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold">Context Files (Optional)</Label>
+                <p className="text-sm text-gray-600 mt-1">
+                  Upload business data files (sales, revenue, financial data) to enhance research analysis
+                </p>
+              </div>
+              
+              <FileDrop onParsed={setUploadedFiles} />
+              
+              {uploadedFiles.length > 0 && (
+                <div className="space-y-3">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="text-sm font-medium text-blue-900 mb-2">
+                      📊 Uploaded Files ({uploadedFiles.length})
+                    </div>
+                    <div className="space-y-2">
+                      {uploadedFiles.map((file) => (
+                        <div key={file.id} className="text-xs space-y-1">
+                          <div className="font-medium text-blue-800">{file.id}</div>
+                          {file.businessData && (
+                            <div className="text-blue-700">
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-blue-100">
+                                {file.businessData.type}
+                              </span>
+                              {file.businessData.metrics && file.businessData.metrics.length > 0 && (
+                                <span className="ml-2 text-xs">
+                                  Metrics: {file.businessData.metrics.join(', ')}
+                                </span>
+                              )}
+                              {file.businessData.timeRange && (
+                                <span className="ml-2 text-xs">
+                                  Period: {file.businessData.timeRange}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="context-analysis"
+                      checked={includeContextAnalysis}
+                      onCheckedChange={setIncludeContextAnalysis}
+                    />
+                    <Label htmlFor="context-analysis" className="font-medium">
+                      Include uploaded files in research analysis
+                    </Label>
+                  </div>
+                  
+                  {includeContextAnalysis && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <div className="text-sm text-amber-800">
+                        <strong>📈 Professional Context Analysis Enabled</strong>
+                        <p className="mt-1">
+                          The research will start with Step 0: Context Analysis, using professional analyst 
+                          frameworks to extract insights from your data and integrate them with market research.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

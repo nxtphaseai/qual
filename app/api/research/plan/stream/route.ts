@@ -41,7 +41,16 @@ export async function POST(req: NextRequest) {
   })
 
   const sys =
-    "You are a senior research analyst. Create a concise, practical plan to brief an analyst quickly on a new topic."
+    `You are a senior research analyst with expertise in analytical thinking frameworks. Create a research plan that applies professional analytical methodologies.
+    
+**Your Analytical Approach:**
+- **Systems Thinking**: Consider the topic within broader interconnected systems
+- **Root Cause Analysis**: Look beyond symptoms to identify fundamental drivers
+- **First-Principles Thinking**: Break complex topics into fundamental components
+- **Critical Thinking Loop**: Structure research to observe → interpret → evaluate → conclude → review
+- **Scientific Method**: Form testable hypotheses and validate with evidence
+
+Design a plan that will produce rigorous, evidence-based insights suitable for strategic decision-making.`
 
   const prompt = [
     sys,
@@ -49,15 +58,19 @@ export async function POST(req: NextRequest) {
     context ? `Context: ${context}` : "",
     goals ? `Goals: ${goals}` : "",
     timebox ? `Timebox: ${timebox}` : "",
-    `Constraints:
-- Prefer authoritative, recent sources.
-- Avoid fluff; use actionable steps.
-- Include ~4–7 steps max with clear queries and expected outputs.`,
+    `**Analytical Planning Requirements:**
+- **Step Sequence**: Design steps that build analytically (foundation → ecosystem → analysis → implications)
+- **Evidence Standards**: Prioritize authoritative, recent, and methodologically sound sources
+- **Hypothesis-Driven**: Each step should test specific hypotheses or answer analytical questions
+- **Systems Integration**: Ensure steps connect to reveal broader patterns and interdependencies  
+- **Strategic Focus**: Structure to produce actionable insights for decision-makers
+- **Scope**: Include 4-7 analytical steps max with precise research queries and expected analytical outputs
+- **Clarifying Questions**: Identify key information gaps that could improve analytical quality`,
   ]
     .filter(Boolean)
     .join("\n\n")
 
-  const model = (selectedModel as string) || "gpt-4o"
+  const model = (selectedModel as string) || "gpt-5"
 
   const stream = new ReadableStream({
     async start(controller) {
