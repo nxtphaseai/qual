@@ -519,7 +519,7 @@ export default function ResearchAgent() {
             <Rocket className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">Research Agent</h2>
+            <h2 className="text-xl font-bold">Qualitative Research Agent (QRA)</h2>
             <p className="text-sm">
               Drafts a plan, lets you review, and executes research with streaming updates and sources.
             </p>
