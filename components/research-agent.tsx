@@ -13,7 +13,7 @@ import { Square, Trash2, Rocket, Loader2, Lightbulb, ChevronDown, ChevronRight, 
 import ReactMarkdown from "react-markdown"
 import ResearchReport from "./research-report"
 import EntityText from "./entity-text"
-import LockedEntityMarkdown from "./locked-entity-markdown"
+import CitationMarkdown from "./citation-markdown"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type PlanStep = {
@@ -132,6 +132,7 @@ export default function ResearchAgent() {
   const [thinkingActivity, setThinkingActivity] = useState<Record<number, string>>({})
   const [planStepsExpanded, setPlanStepsExpanded] = useState(true)
   const [briefExpanded, setBriefExpanded] = useState(true)
+  const [clarifyingAnswers, setClarifyingAnswers] = useState<string>("")
   
   // Thinking activities that rotate
   const thinkingActivities = [
@@ -380,7 +381,7 @@ export default function ResearchAgent() {
       const res = await fetch("/api/research/execute/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, context, goals, timebox, steps: activeSteps, model, reasoningEffort: effort }),
+        body: JSON.stringify({ topic, context, goals, timebox, steps: activeSteps, model, reasoningEffort: effort, clarifyingAnswers }),
         signal: ctrl.signal,
       })
       if (!res.ok) {
@@ -860,6 +861,35 @@ export default function ResearchAgent() {
                 </div>
               )}
 
+              {plan.clarifyingQuestions.length > 0 && (
+                <div className="mt-4 p-4 bg-amber-50 border-2 border-amber-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Lightbulb className="h-5 w-5 text-amber-600" />
+                    <div className="font-medium text-amber-900">Additional Information Needed</div>
+                  </div>
+                  <div className="text-sm text-amber-800 mb-3">
+                    Please provide answers to these clarifying questions to improve the research quality:
+                  </div>
+                  <div className="space-y-2 mb-3">
+                    {plan.clarifyingQuestions.map((q, i) => (
+                      <div key={i} className="text-sm text-amber-900">
+                        <span className="font-medium">{i + 1}.</span> {q}
+                      </div>
+                    ))}
+                  </div>
+                  <Textarea
+                    placeholder="Please provide answers to the clarifying questions above. You can address them in any order or format that works best for you..."
+                    value={clarifyingAnswers}
+                    onChange={(e) => setClarifyingAnswers(e.target.value)}
+                    rows={4}
+                    className="w-full bg-white border-amber-300 focus:border-amber-500 focus:ring-amber-500"
+                  />
+                  <div className="mt-2 text-xs text-amber-700">
+                    💡 Providing answers will help the research agent generate more targeted and relevant results.
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-2">
                 <Button onClick={executePlanStream} disabled={executing}>
                   {executing ? (
@@ -967,30 +997,34 @@ export default function ResearchAgent() {
                         ) : (
                           <>
                             <div className="prose prose-sm dark:prose-invert max-w-none overflow-hidden">
-                              <LockedEntityMarkdown 
+                              <CitationMarkdown 
                                 className="text-sm leading-relaxed"
                                 isComplete={!isThinking && hasContent}
+                                sources={r.sources}
                               >
                                 {r.summary || "Waiting for content..."}
-                              </LockedEntityMarkdown>
+                              </CitationMarkdown>
                             </div>
                             {r.sources.length > 0 && (
                               <div className="mt-2 text-xs border-t pt-2">
                                 <div className="font-medium mb-1">Sources</div>
-                                <ul className="list-disc pl-5 space-y-1">
+                                <div className="space-y-1">
                                   {r.sources.map((s, i) => (
-                                    <li key={i}>
+                                    <div key={i} className="flex items-start gap-2">
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 flex-shrink-0 mt-0.5">
+                                        {i + 1}
+                                      </span>
                                       <a 
-                                        className="text-blue-600 hover:text-blue-800 underline decoration-solid underline-offset-2 cursor-pointer transition-colors duration-200" 
+                                        className="text-blue-600 hover:text-blue-800 underline decoration-solid underline-offset-2 cursor-pointer transition-colors duration-200 flex-1" 
                                         href={s.url} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                       >
                                         {s.title || s.url}
                                       </a>
-                                    </li>
+                                    </div>
                                   ))}
-                                </ul>
+                                </div>
                               </div>
                             )}
                           </>

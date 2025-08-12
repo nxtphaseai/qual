@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
     steps,
     model: selectedModel,
     reasoningEffort,
+    clarifyingAnswers,
   } = body as {
     topic: string
     context?: string
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest) {
     steps: Step[]
     model?: string
     reasoningEffort?: "low" | "medium" | "high"
+    clarifyingAnswers?: string
   }
 
   const encoder = new TextEncoder()
@@ -74,6 +76,7 @@ export async function POST(req: NextRequest) {
               `You are gathering sources for: ${topic}`,
               context ? `Context: ${context}` : "",
               goals ? `Goals: ${goals}` : "",
+              clarifyingAnswers ? `Additional Information Provided: ${clarifyingAnswers}` : "",
               `Current step: ${step.title}`,
               step.queries?.length ? `Queries to consider:\n- ${step.queries.join("\n- ")}` : "",
               `Instructions:
@@ -142,6 +145,7 @@ export async function POST(req: NextRequest) {
               `Topic: ${topic}`,
               context ? `Context: ${context}` : "",
               goals ? `Goals: ${goals}` : "",
+              clarifyingAnswers ? `Additional Information Provided: ${clarifyingAnswers}` : "",
               `Step: ${step.title}`,
               step.rationale ? `Why this step: ${step.rationale}` : "",
               stepSpecificInstructions,
@@ -230,6 +234,7 @@ export async function POST(req: NextRequest) {
             `Topic: ${topic}`,
             context ? `Context: ${context}` : "",
             goals ? `Goals: ${goals}` : "",
+            clarifyingAnswers ? `Additional Information Provided: ${clarifyingAnswers}` : "",
             timebox ? `Timebox: ${timebox}` : "",
             collected.length
               ? `Step outputs (title + summary):\n${collected

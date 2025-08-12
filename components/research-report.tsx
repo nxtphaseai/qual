@@ -158,21 +158,24 @@ export default function ResearchReportView({
 
         {report.sources.length > 0 && (
           <div>
-            <div className="text-sm font-medium mb-1">Sources</div>
-            <ul className="list-disc pl-5 text-sm space-y-1">
+            <div className="text-sm font-medium mb-3">Sources</div>
+            <div className="space-y-2">
               {report.sources.map((s, i) => (
-                <li key={i}>
+                <div key={i} className="flex items-start gap-3">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 flex-shrink-0 mt-0.5">
+                    {i + 1}
+                  </span>
                   <a 
-                    className="text-blue-600 hover:text-blue-800 underline decoration-solid underline-offset-2 cursor-pointer transition-colors duration-200" 
+                    className="text-blue-600 hover:text-blue-800 underline decoration-solid underline-offset-2 cursor-pointer transition-colors duration-200 flex-1 text-sm" 
                     href={s.url} 
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
                     {s.title ?? s.url}
                   </a>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
       </CardContent>
