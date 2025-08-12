@@ -140,17 +140,19 @@ export default function ResearchReportView({
 
         {report.glossary.length > 0 && (
           <div>
-            <div className="text-sm font-medium mb-1">Glossary</div>
-            <ul className="list-disc pl-5 text-sm space-y-1">
+            <div className="text-sm font-medium mb-3">Glossary</div>
+            <div className="space-y-3">
               {report.glossary.map((g, i) => (
-                <li key={i}>
-                  <span className="font-medium">
-                    <EntityText text={g.term} className="font-medium" />:
-                  </span>{" "}
-                  <EntityText text={g.definition} className="text-sm" />
-                </li>
+                <div key={i} className="border-l-4 border-blue-200 pl-4 py-2 bg-gray-50 rounded-r-lg">
+                  <div className="font-semibold text-blue-900 mb-1">
+                    <EntityText text={g.term} className="font-semibold text-blue-900" />
+                  </div>
+                  <div className="text-gray-700 text-sm leading-relaxed">
+                    <EntityText text={g.definition} className="text-gray-700" />
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
 
