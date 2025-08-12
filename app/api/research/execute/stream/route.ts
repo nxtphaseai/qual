@@ -293,6 +293,11 @@ ${contextAnalysisResult ? "- **Internal-External Integration**: For each finding
           return
         }
 
+        // Announce final briefing generation
+        const finalStepIndex = contextSteps + researchSteps
+        send({ type: "progress", current: finalStepIndex, total: finalStepIndex + 1 })
+        send({ type: "step-start", index: finalStepIndex, title: "Generating Executive Briefing" })
+
         // Build the final report using collected summaries and sources
         const reportSchema = z.object({
           title: z.string(),
@@ -354,6 +359,10 @@ ${contextAnalysisResult ? "  * Internal data validation and competitive benchmar
           providerOptions: { openai: { reasoningEffort } },
           abortSignal: req.signal,
         })
+
+        // Announce briefing completion
+        send({ type: "step-end", index: finalStepIndex, summary: "Executive briefing generated successfully" })
+        send({ type: "progress", current: finalStepIndex + 1, total: finalStepIndex + 1 })
 
         send({ type: "report", report: { ...report, sources: Array.from(unique.values()) } })
         send({ type: "done" })

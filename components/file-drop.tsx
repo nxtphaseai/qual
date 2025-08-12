@@ -228,6 +228,73 @@ export default function FileDrop({ onParsed }: { onParsed: (items: RecordItem[])
       .filter((r) => r.text)
   }
 
+  const parsePdf = async (file: File): Promise<RecordItem[]> => {
+    try {
+      // Dynamic import for client-side only
+      const pdfjsLib = await import('pdfjs-dist')
+      
+      // Set up worker (only once)
+      if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+      }
+      
+      const arrayBuffer = await file.arrayBuffer()
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+      let fullText = ""
+      
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i)
+        const textContent = await page.getTextContent()
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ')
+        fullText += pageText + '\n\n'
+      }
+      
+      const text = fullText.trim()
+      if (!text) return []
+      
+      return [{
+        id: file.name,
+        text,
+        meta: {
+          type: 'pdf',
+          pages: pdf.numPages,
+          size: file.size
+        }
+      }]
+    } catch (error) {
+      console.error('PDF parsing error:', error)
+      return []
+    }
+  }
+
+  const parseDocx = async (file: File): Promise<RecordItem[]> => {
+    try {
+      // Dynamic import for client-side only
+      const mammoth = await import('mammoth')
+      
+      const arrayBuffer = await file.arrayBuffer()
+      const result = await mammoth.extractRawText({ arrayBuffer })
+      const text = result.value.trim()
+      
+      if (!text) return []
+      
+      return [{
+        id: file.name,
+        text,
+        meta: {
+          type: 'docx',
+          size: file.size,
+          messages: result.messages // Any warnings from mammoth
+        }
+      }]
+    } catch (error) {
+      console.error('DOCX parsing error:', error)
+      return []
+    }
+  }
+
   const parseJson = async (file: File): Promise<RecordItem[]> => {
     const text = await file.text()
     try {
@@ -278,6 +345,10 @@ export default function FileDrop({ onParsed }: { onParsed: (items: RecordItem[])
           all.push(...(await parseJson(f)))
         } else if (ext === "xlsx" || ext === "xls") {
           all.push(...(await parseExcel(f)))
+        } else if (ext === "pdf") {
+          all.push(...(await parsePdf(f)))
+        } else if (ext === "docx") {
+          all.push(...(await parseDocx(f)))
         } else {
           // unsupported; skip
         }
@@ -311,13 +382,13 @@ export default function FileDrop({ onParsed }: { onParsed: (items: RecordItem[])
         ref={inputRef}
         type="file"
         multiple
-        accept=".txt,.md,.csv,.json,.xlsx,.xls"
+        accept=".txt,.md,.csv,.json,.xlsx,.xls,.pdf,.docx"
         className="hidden"
         onChange={(e) => onFiles(e.target.files)}
       />
       <div className="text-center">
         <div className="font-medium">Drop files here or click to upload</div>
-        <div className="text-muted-foreground">Supported: .txt, .csv, .json, .xlsx, .xls</div>
+        <div className="text-muted-foreground">Supported: .txt, .csv, .json, .xlsx, .xls, .pdf, .docx</div>
         <div className="text-xs text-muted-foreground mt-1">Business data (sales, revenue, financial) will be analyzed automatically</div>
       </div>
     </div>

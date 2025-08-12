@@ -1138,7 +1138,19 @@ export default function ResearchAgent() {
             </CardContent>
           </Card>
 
-          {execReport && <ResearchReport report={execReport} stepResults={stepResults} />}
+          {execReport && (
+            <ResearchReport 
+              report={execReport} 
+              stepResults={stepResults} 
+              researchContext={{
+                topic,
+                contextAnalysis: stepResults.find(step => 
+                  step.title?.includes("Context Analysis") || step.title?.includes("Business Data Review")
+                )?.summary,
+                model
+              }}
+            />
+          )}
         </div>
       )}
       </div>
