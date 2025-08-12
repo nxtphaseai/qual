@@ -511,7 +511,8 @@ export default function ResearchAgent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
       <div className="bg-blue-100 p-4 rounded-lg">
         <div className="flex items-center gap-2">
           <div className="bg-blue-500 text-white p-2 rounded-lg">
@@ -1005,6 +1006,7 @@ export default function ResearchAgent() {
           {execReport && <ResearchReport report={execReport} stepResults={stepResults} />}
         </div>
       )}
+      </div>
     </div>
   )
 }
