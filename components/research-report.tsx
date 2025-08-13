@@ -251,7 +251,10 @@ export default function ResearchReportView({
 
   return (
     <>
-      <div className={`transition-all duration-500 ease-in-out ${splitPanelOpen ? 'w-1/2 overflow-x-auto' : 'w-full'}`}>
+      <div 
+        className={`transition-all duration-500 ease-in-out ${splitPanelOpen ? 'w-1/2 overflow-x-auto' : 'w-full'}`}
+        onClick={splitPanelOpen ? closeSplitPanel : undefined}
+      >
         <div className={`${splitPanelOpen ? 'opacity-75 pointer-events-none min-w-[800px]' : ''}`}>
           <Card>
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
